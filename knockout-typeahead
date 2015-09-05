@@ -1,0 +1,39 @@
+ko.bindingHandlers.typeahead = {
+    init: function (element, valueAccessor, allBindings, viewModel) {
+        // make sure that if the value of the input changes programatically
+        // that we also update the typeahead value
+        allBindings.get('value').subscribe(function (newValue) {
+            $(element).typeahead('val', newValue);
+        });
+    },
+    update: function (element, valueAccessor, allBindings) {
+        // http://stackoverflow.com/a/19366003/1247130 get value to update properly when typeahead choice is selected.
+
+        var templateName = ko.unwrap(allBindings().templateName);
+        var mapping = ko.unwrap(allBindings().mappingFunction);
+        var displayedProperty = ko.unwrap(allBindings().displayKey);
+        var value = allBindings.get('value');
+
+        var url = ko.unwrap(valueAccessor());
+
+        $(element).typeahead('destroy');
+
+        $(element)
+            .typeahead({
+                hint: true,
+                highlight: true
+            },
+            {
+                source: substringMatcher(url),
+                displayKey: displayedProperty || function (item) {
+                    return item;
+                },
+                limit: 100
+            })
+        .on("typeahead:selected typeahead:autocompleted", function (e, suggestion) {
+            if (value && ko.isObservable(value)) {
+                value(suggestion);
+            }
+        });
+    }
+};
